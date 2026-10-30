@@ -1,0 +1,16 @@
+# Ignore everything at the root by default. This workspace also hosts local
+# application folders, so only the development environment is versioned.
+/*
+
+# Files and folders that belong to the shared development environment.
+!/.gitignore
+!/.env.example
+!/Makefile
+!/README.md
+!/docker-compose.yml
+!/docker/
+!/.github/
+
+# Local and macOS files should never be committed, including under docker/.
+.env
+**/.DS_Store

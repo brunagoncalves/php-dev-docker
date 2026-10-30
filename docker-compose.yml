@@ -1,0 +1,91 @@
+name: php-dev
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_dev
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx:/etc/nginx/conf.d:ro
+
+    depends_on:
+      - php
+
+    networks:
+      - network-dev
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+
+    container_name: php_dev
+
+    working_dir: /var/www/html
+
+    volumes:
+      - ./:/var/www/html
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - network-dev
+
+  node:
+    image: node:24-alpine
+    container_name: node_dev
+
+    working_dir: /var/www/html
+
+    volumes:
+      - ./:/var/www/html
+
+    ports:
+      - "5173:5173"
+
+    command: tail -f /dev/null
+
+    networks:
+      - network-dev
+
+  db:
+    image: postgres:16-alpine
+    container_name: postgres_dev
+
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root_password}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - network-dev
+
+volumes:
+  postgres_data:
+
+networks:
+  network-dev:
+    name: network-dev
+    driver: bridge
